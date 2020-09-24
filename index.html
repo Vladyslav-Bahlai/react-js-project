@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hello World</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+
+    <!-- Don't use this in production: -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="text/babel">
+      const { Fragment, Component, useState, useEffect, useRef } = React;
+
+      class Post {
+        constructor(
+          postId,
+          postAvatar,
+          postName,
+          postTime,
+          postText,
+          postImage
+        ) {
+          this.postId = postId;
+          this.postAvatar = postAvatar;
+          this.postName = postName;
+          this.postTime = postTime;
+          this.postText = postText;
+          this.postImage = postImage;
+          this.isActive = false;
+          this.isClosed = false;
+          this.isFavourite = false;
+        }
+      }
+
+      let loaded = false;
+
+      const Form = props => {
+        const inputNameRef = useRef();
+        const inputTimeRef = useRef();
+        const inputTextRef = useRef();
+
+        const addPost = () => {
+          // 1. create new post
+          const inputNameVal = inputNameRef.current.value;
+          const inputTimeVal = inputTimeRef.current.value;
+          const inputTextVal = inputTextRef.current.value;
+
+          const post =
+            inputNameVal && inputTimeVal && inputTextVal
+              ? new Post(
+                  'id',
+                  './img/avatar.jpg',
+                  inputNameVal,
+                  inputTimeVal,
+                  inputTextVal,
+                  ''
+                )
+              : null;
+
+          // 2. let the outer world know about new post
+          props.onSubmit(post);
+        };
+
+        const someValue = inputNameRef.current
+          ? inputNameRef.current.value
+          : '';
+
+        return (
+          <>
+            Name <input type="text" value={someValue} ref={inputNameRef} />
+            Time <input type="text" ref={inputTimeRef} />
+            Text <textarea rows="4" cols="50" ref={inputTextRef} />
+            <button onClick={addPost}>Submit</button>
+          </>
+        );
+      };
+
+      class Counter extends Component {
+        state = { countA: 0, countB: 0 };
+
+        increaseCountA() {
+          this.setState(state => ({ countA: state.countA + 1 }));
+        }
+        increaseCountB() {
+          this.setState(state => ({ countB: state.countB + 1 }));
+        }
+
+        render() {
+          return (
+            <>
+              <div>
+                CountA: {this.state.countA}{' '}
+                <button
+                  onClick={() => {
+                    this.increaseCountA();
+                  }}
+                  onDoubleClick={ev => {
+                    ev.stopPropagation();
+                  }}
+                >
+                  Increase
+                </button>
+              </div>
+              <div>
+                CountB: {this.state.countB}{' '}
+                <button
+                  onClick={() => {
+                    this.increaseCountB();
+                  }}
+                  onDoubleClick={ev => {
+                    ev.stopPropagation();
+                  }}
+                >
+                  Increase
+                </button>
+              </div>
+            </>
+          );
+        }
+      }
+
+      const PostComponent = props => {
+        const state = { post: props.post, brotherPost: props.brotherPost };
+
+        const {
+          closePost,
+          activatePost,
+          savePost,
+          unsavePost,
+          stopTimer,
+          continueTimer
+        } = props.callbacks;
+
+        return !state.post.isClosed ? (
+          <div
+            className="post"
+            style={{
+              border: state.post.isActive ? '5px solid red' : 'none',
+              backgroundColor: state.post.isFavourite ? 'yellow' : 'lightgrey'
+            }}
+            onDoubleClick={ev => {
+              if (state.post.isFavourite) return;
+              ev.stopPropagation();
+              savePost(state.post);
+            }}
+          >
+            <div className="post-header">
+              <div className="avatar">
+                <img src={state.post.postAvatar} alt="avatar" />
+              </div>
+              <div className="header-title">
+                <p className="name">{state.post.postName}</p>
+                <p className="time">Posted at: {state.post.postTime}</p>
+              </div>
+            </div>
+            <div className="post-body">
+              <div>
+                <CoolTimer timerState={props.timerIsFrozen} />
+                <button onClick={stopTimer}>Stop</button>
+                <button onClick={continueTimer}>Continue</button>
+              </div>
+
+              <Counter />
+              <div className="container-text">
+                <p className="text">{state.post.postText}</p>
+              </div>
+              <img src={state.post.postImage} alt="" />
+              <div className="nav">
+                <button
+                  onClick={() => {
+                    activatePost(state.post);
+                  }}
+                  onDoubleClick={ev => {
+                    ev.stopPropagation();
+                  }}
+                >
+                  {state.post.isActive ? 'Deactivate' : 'Activate'}
+                </button>
+                <button
+                  onClick={() => {
+                    closePost(state.post);
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <button
+              onClick={() => {
+                closePost(state.post);
+              }}
+            >
+              Restore
+            </button>
+          </div>
+        );
+      };
+
+      class App extends Component {
+        state = {
+          posts: [
+            new Post(
+              1,
+              './img/avatar.jpg',
+              'Vladyslav Bahlai',
+              '09:34',
+              'Lorem ipsum, dolor sit amet consectetur adipisicing elit',
+              ''
+            ),
+            new Post(
+              2,
+              './img/avatar.jpg',
+              'Igor Ivanyk',
+              '09:34',
+              'Lorem ipsum, dolor sit amet consectetur adipisicing elit',
+              './img/post-img.jpg'
+            )
+          ],
+          timerIsFrozen: false,
+          currentPostIndex: 0
+        };
+
+        findPostById = id => {
+          if (id == 1) {
+            return 'post1';
+          } else if (id == 2) {
+            return 'post2';
+          } else throw new Error('Post not found!');
+        };
+
+        closePost = obj => {
+          const post = this.findPostById(obj.postId);
+          this.setState(state => ({
+            [post]: { ...state[post], isClosed: !state[post].isClosed }
+          }));
+        };
+
+        activatePost = obj => {
+          const post = this.findPostById(obj.postId);
+          this.setState(state => ({
+            [post]: { ...state[post], isActive: !state[post].isActive }
+          }));
+        };
+
+        savePost = obj => {
+          const post = this.findPostById(obj.postId);
+          this.setState(state => ({
+            [post]: { ...state[post], isFavourite: true }
+          }));
+        };
+
+        stopTimer = () => {
+          this.setState({ timerIsFrozen: true });
+        };
+
+        continueTimer = () => {
+          this.setState({ timerIsFrozen: false });
+        };
+
+        addPost(newPost) {
+          console.log(newPost);
+          this.setState(({ posts }) => {
+            const newPosts = posts.slice();
+            newPosts.push(newPost);
+            // const newPosts = [...posts, newPost];
+            const myStateUpdate = { posts: newPosts };
+            console.log('my state update is: ', myStateUpdate);
+            return myStateUpdate;
+          });
+
+          this.setState({ updatedField: 1 });
+          this.setState(() => ({ updatedField: 1 }));
+        }
+
+        callbacks = {
+          closePost: this.closePost,
+          activatePost: this.activatePost,
+          savePost: this.savePost,
+          unsavePost: this.unsavePost,
+          stopTimer: this.stopTimer,
+          continueTimer: this.continueTimer
+        };
+
+        render() {
+          const { currentPostIndex, posts } = this.state;
+          const currentPost = posts[currentPostIndex];
+          console.log(this.state);
+
+          return (
+            <div className="cont">
+              <div>Number of posts: {posts.length}</div>
+              <PostComponent
+                post={currentPost}
+                callbacks={this.callbacks}
+                timerIsFrozen={this.state.timerIsFrozen}
+              />
+              <button
+                onClick={() => {
+                  this.setState(state => ({
+                    currentPostIndex: currentPostIndex - 1
+                  }));
+                }}
+                disabled={currentPostIndex == 0}
+              >
+                Prev
+              </button>
+              <button
+                onClick={() => {
+                  this.setState(state => ({
+                    currentPostIndex: currentPostIndex + 1
+                  }));
+                }}
+                disabled={currentPostIndex == posts.length - 1}
+              >
+                Next
+              </button>
+              <div className="form">
+                <Form
+                  onSubmit={newPost => {
+                    this.addPost(newPost);
+                  }}
+                />
+              </div>
+            </div>
+          );
+        }
+      }
+
+      const CoolTimer = props => {
+        const [interval, setTimerInterval] = useState(1000);
+        return (
+          <>
+            <div>
+              <Timer step={interval} timerState={props.timerState} />
+
+              <button
+                onClick={() => {
+                  setTimerInterval(1000);
+                }}
+              >
+                1 sec
+              </button>
+              <button
+                onClick={() => {
+                  setTimerInterval(3000);
+                }}
+              >
+                3 sec
+              </button>
+              <button
+                onClick={() => {
+                  setTimerInterval(5000);
+                }}
+              >
+                5 sec
+              </button>
+            </div>
+          </>
+        );
+      };
+
+      const Timer = props => {
+        const [currentTime, updateCurrentTime] = useState(new Date());
+        useEffect(() => {
+          console.log('timer updated');
+
+          const timerId = setInterval(() => {
+            updateCurrentTime(new Date());
+          }, props.step);
+
+          return () => {
+            clearInterval(timerId);
+          };
+        }, [props.step]);
+
+        return (
+          <div>
+            {currentTime.getHours()} : {currentTime.getMinutes()} :{' '}
+            {currentTime.getUTCSeconds()}
+          </div>
+        );
+      };
+
+      // class Timer extends Component {
+      //   state = {
+      //     currentTime: new Date()
+      //   };
+
+      //   timerId = 0;
+
+      //   createInterval() {
+      //     this.timerId = setInterval(() => {
+      //       this.setState({ currentTime: new Date() });
+      //     }, this.props.step);
+      //   }
+
+      //   componentDidMount() {
+      //     this.createInterval();
+      //   }
+
+      //   componentDidUpdate(prevProps, prevState) {
+      //     console.log(this.props.step);
+
+      //     if (prevProps.step != this.props.step) {
+      //       clearInterval(this.timerId);
+      //       this.createInterval();
+      //     }
+
+      //     if (this.props.timerState) {
+      //       clearInterval(this.timerId);
+      //     }
+
+      //     if (
+      //       !this.props.timerState &&
+      //       this.props.timerState != prevProps.timerState
+      //     ) {
+      //       clearInterval(this.timerId);
+      //       this.createInterval();
+      //     }
+      //   }
+
+      //   render() {
+      //     const { currentTime } = this.state;
+      //     return (
+      //       <div>
+      //         {currentTime.getHours()} : {currentTime.getMinutes()} :{' '}
+      //         {currentTime.getUTCSeconds()}
+      //       </div>
+      //     );
+      //   }
+      // }
+
+      const renderUI = () => {
+        const jsx = loaded ? <App /> : <span>Loading....</span>;
+        ReactDOM.render(jsx, document.getElementById('root'));
+      };
+
+      renderUI();
+
+      // LOGIC
+
+      setTimeout(() => {
+        loaded = true;
+        renderUI();
+      }, 500);
+    </script>
+  </body>
+</html>

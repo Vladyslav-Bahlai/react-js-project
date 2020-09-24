@@ -1,0 +1,65 @@
+.post {
+  width: 500px;
+  background: lightgrey;
+  margin-bottom: 20px;
+}
+
+button {
+  margin: 10px;
+}
+
+.form {
+  width: 200px;
+  margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+}
+
+input, textarea {
+  margin: 5px  0;
+}
+
+html,
+body,
+#root,
+.cont {
+  height: 100%;
+}
+
+.nav-app {
+  display: flex;
+  justify-content: center;
+}
+
+button {
+  margin: 0 5px;
+}
+
+p {
+  margin: 5px 0;
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+}
+
+.avatar {
+  border-radius: 50%;
+  width: 20%;
+  margin-right: 20px;
+}
+
+.avatar img {
+  width: 100%;
+}
+
+.post-body {
+  padding: 10px;
+}
+
+.post-body img {
+  width: 100%;
+  margin: 10px 0;
+}
